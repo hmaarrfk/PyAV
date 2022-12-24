@@ -411,7 +411,7 @@ cdef class CodecContext(object):
         out = []
         while True:
             packet = self._recv_packet()
-            if packet:
+            if packet is not None:
                 out.append(packet)
             else:
                 break
