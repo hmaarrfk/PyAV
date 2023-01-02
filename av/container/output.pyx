@@ -222,3 +222,13 @@ cdef class OutputContainer(Container):
         with nogil:
             ret = lib.av_interleaved_write_frame(self.ptr, self.packet_ptr)
         self.err_check(ret)
+
+    cdef flush_buffers(self):
+        cdef Stream stream
+        cdef CodecContext codec_context
+
+        for stream in self.streams:
+            codec_context = stream.codec_context
+            if codec_context and codec_context.is_open:
+                with nogil:
+                    lib.avcodec_flush_buffers(codec_context.ptr)

@@ -11,3 +11,5 @@ cdef class OutputContainer(Container):
     cdef lib.AVPacket *packet_ptr
 
     cpdef start_encoding(self)
+
+    cdef flush_buffers(self)
