@@ -538,6 +538,13 @@ cdef class CodecContext(object):
 
         frame.index = self.ptr.frame_number - 1
 
+    property frame_number:
+        def __get__(self):
+            return self.ptr.frame_number
+
+        def __set__(self, value):
+            self.ptr.frame_number = int(value)
+
     property name:
         def __get__(self):
             return self.codec.name
