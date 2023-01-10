@@ -168,7 +168,10 @@ cdef class VideoFrame(Frame):
         Wraps :ffmpeg:`AVFrame.key_frame`.
 
         """
-        def __get__(self): return self.ptr.key_frame
+        def __get__(self):
+            return self.ptr.key_frame
+        def __set__(self, value):
+            self.ptr.key_frame = bool(value)
 
     property interlaced_frame:
         """Is this frame an interlaced or progressive?
