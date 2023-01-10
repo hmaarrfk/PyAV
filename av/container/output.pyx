@@ -43,6 +43,32 @@ cdef class OutputContainer(Container):
         with nogil:
             lib.av_packet_free(&self.packet_ptr)
 
+    def add_stream_share_context(self, Stream other, options=None, **kwargs):
+        cdef const lib.AVCodec *codec
+        cdef Codec codec_obj
+        cdef CodecContext context
+
+        if not other.codec_context:
+            raise ValueError("template has no codec context")
+        codec_obj = other.codec_context.codec
+        codec = codec_obj.ptr
+
+        # Create new stream in the AVFormatContext, set AVCodecContext values.
+        lib.avformat_new_stream(self.ptr, codec)
+        cdef lib.AVStream *stream = self.ptr.streams[self.ptr.nb_streams - 1]
+
+        # Construct the user-land stream
+        cdef Stream py_stream = wrap_stream(self, stream, other.codec_context)
+        self.streams.add_stream(py_stream)
+
+        if options:
+            py_stream.options.update(options)
+
+        for k, v in kwargs.items():
+            setattr(py_stream, k, v)
+
+        return py_stream
+
     def add_stream(self, codec_name=None, object rate=None, Stream template=None, options=None, **kwargs):
         """add_stream(codec_name, rate=None)
 
