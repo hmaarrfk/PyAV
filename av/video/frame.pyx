@@ -347,6 +347,10 @@ cdef class VideoFrame(Frame):
             check_ndarray(array, 'uint8', 3)
             check_ndarray_shape(array, array.shape[2] == 3)
             height, width = array.shape[:2]
+        elif format in ["rgba", "bgra"]:
+            check_ndarray(array, 'uint8', 3)
+            check_ndarray_shape(array, array.shape[2] == 4)
+            height, width = array.shape[:2]
         else:
             raise ValueError('Conversion from numpy array with format `%s` is not yet supported' % format)
 
