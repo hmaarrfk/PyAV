@@ -411,7 +411,7 @@ cdef class CodecContext(object):
         out = []
         while True:
             packet = self._recv_packet()
-            if packet:
+            if packet is not None:
                 out.append(packet)
             else:
                 break
@@ -538,6 +538,13 @@ cdef class CodecContext(object):
 
         frame.index = self.ptr.frame_number - 1
 
+    property frame_number:
+        def __get__(self):
+            return self.ptr.frame_number
+
+        def __set__(self, value):
+            self.ptr.frame_number = int(value)
+
     property name:
         def __get__(self):
             return self.codec.name
@@ -593,10 +600,17 @@ cdef class CodecContext(object):
 
     property max_bit_rate:
         def __get__(self):
-            if self.ptr.rc_max_rate > 0:
-                return self.ptr.rc_max_rate
-            else:
-                return None
+            return self.ptr.rc_max_rate if self.ptr.rc_max_rate > 0 else None
+
+        def __set__(self, int value):
+            self.ptr.rc_max_rate = value
+
+    property min_bit_rate:
+        def __get__(self):
+            return self.ptr.rc_min_rate if self.ptr.rc_min_rate > 0 else None
+
+        def __set__(self, int value):
+            self.ptr.rc_min_rate = value
 
     property bit_rate_tolerance:
         def __get__(self):

@@ -474,6 +474,30 @@ class TestVideoFrameNdarray(TestCase):
         self.assertEqual(frame.format.name, "nv12")
         self.assertNdarraysEqual(frame.to_ndarray(), array)
 
+class TestVideoFrameNumpyBuffer(TestCase):
+    def test_shares_memory_rgb24(self):
+        array = numpy.random.randint(0, 256, size=(357, 318, 3), dtype=numpy.uint8)
+        original_arr = array.copy()
+        frame = VideoFrame.from_numpy_buffer(array, "rgb24")
+        numpy_from_frame = frame.to_ndarray()
+        self.assertNdarraysEqual(frame.to_ndarray(), array)
+
+        # overwrite the array, the contents thereof
+        array[...] = numpy.random.randint(0, 256, size=(357, 318, 3), dtype=numpy.uint8)
+        # Make sure the frame reflects that
+        self.assertNdarraysEqual(frame.to_ndarray(), array)
+
+    def test_shares_memory_bgr24(self):
+        array = numpy.random.randint(0, 256, size=(357, 318, 3), dtype=numpy.uint8)
+        original_arr = array.copy()
+        frame = VideoFrame.from_numpy_buffer(array, "bgr24")
+        numpy_from_frame = frame.to_ndarray()
+        self.assertNdarraysEqual(frame.to_ndarray(), array)
+
+        # overwrite the array, the contents thereof
+        array[...] = numpy.random.randint(0, 256, size=(357, 318, 3), dtype=numpy.uint8)
+        # Make sure the frame reflects that
+        self.assertNdarraysEqual(frame.to_ndarray(), array)
 
 class TestVideoFrameTiming(TestCase):
     def test_reformat_pts(self):
