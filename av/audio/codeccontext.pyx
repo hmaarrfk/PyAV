@@ -15,8 +15,9 @@ cdef class AudioCodecContext(CodecContext):
         # channels. Assume it is the default layout.
         # TODO: Put this behind `not bare_metal`.
         # TODO: Do this more efficiently.
-        if self.ptr.channels and not self.ptr.channel_layout:
-            self.ptr.channel_layout = get_audio_layout(self.ptr.channels, 0).layout
+        # TODO: do something like get default mask for channels???
+        # if self.ptr.ch_layout.mask and not self.ptr.channel_layout:
+        #     self.ptr.channel_layout = get_audio_layout(self.ptr.channels, 0).layout
 
     cdef _set_default_time_base(self):
         self.ptr.time_base.num = 1
@@ -88,12 +89,13 @@ cdef class AudioCodecContext(CodecContext):
     # TODO: Integrate into AudioLayout.
     @property
     def channels(self):
-        return self.ptr.channels
+        return self.ptr.ch_layout.nb_channel
 
     @channels.setter
     def channels(self, value):
-        self.ptr.channels = value
-        self.ptr.channel_layout = lib.av_get_default_channel_layout(value)
+        self.ptr.ch_layout.nb_channels = value
+        lib.av_channel_layout_default(&self.ptr.ch_layout, value)
+
     @property
     def channel_layout(self):
         return self.ptr.channel_layout
@@ -105,13 +107,13 @@ cdef class AudioCodecContext(CodecContext):
 
         :type: AudioLayout
         """
-        return get_audio_layout(self.ptr.channels, self.ptr.channel_layout)
+        return get_audio_layout(self.ptr.ch_layout.channels, self.ptr.ch_layout.order)
 
     @layout.setter
     def layout(self, value):
         cdef AudioLayout layout = AudioLayout(value)
-        self.ptr.channel_layout = layout.layout
-        self.ptr.channels = layout.nb_channels
+        self.ptr.ch_layout.order = layout.layout
+        self.ptr.ch_layout.nb_channels = layout.nb_channels
 
     @property
     def format(self):

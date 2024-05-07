@@ -225,7 +225,7 @@ cdef extern from "libavutil/channel_layout.h" nogil:
     )
 
     # Channels.
-    cdef uint64_t av_channel_layout_extract_channel(uint64_t layout, int index)
+    cdef int av_channel_layout_index_from_channel(AVChannelLayout * channel_layout, AVChannel channel)
     cdef char* av_get_channel_name(uint64_t channel)
     cdef char* av_get_channel_description(uint64_t channel)
 

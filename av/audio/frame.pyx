@@ -44,20 +44,21 @@ cdef class AudioFrame(Frame):
             return
 
         cdef AudioFormat cy_format = AudioFormat(format)
-        cdef AudioLayout cy_layout = AudioLayout(layout)
-        self._init(cy_format.sample_fmt, cy_layout.layout, samples, align)
+        cdef lib.AVChannelLayout av_layout
+        lib.av_channel_layout_index_from_channel(&av_layout, layout.nb_channels)
+        self._init(cy_format.sample_fmt, av_layout, samples, align)
 
-    cdef _init(self, lib.AVSampleFormat format, uint64_t layout, unsigned int nb_samples, unsigned int align):
+    cdef _init(self, lib.AVSampleFormat format, lib.AVChannelLayout layout, unsigned int nb_samples, unsigned int align):
 
         self.ptr.nb_samples = nb_samples
         self.ptr.format = <int>format
-        self.ptr.channel_layout = layout
+        self.ptr.ch_layout = layout
 
         # Sometimes this is called twice. Oh well.
         self._init_user_attributes()
 
         # Audio filters need AVFrame.channels to match number of channels from layout.
-        self.ptr.channels = self.layout.nb_channels
+        self.ptr.ch_layout.nb_channels = self.layout.nb_channels
 
         if self.layout.channels and nb_samples:
             # Cleanup the old buffer.
@@ -89,7 +90,7 @@ cdef class AudioFrame(Frame):
         lib.av_freep(&self._buffer)
 
     cdef _init_user_attributes(self):
-        self.layout = get_audio_layout(0, self.ptr.channel_layout)
+        self.layout = get_audio_layout(0, self.ptr.ch_layout.u.mask)
         self.format = get_audio_format(<lib.AVSampleFormat>self.ptr.format)
 
     def __repr__(self):

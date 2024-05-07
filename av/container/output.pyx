@@ -107,8 +107,12 @@ cdef class OutputContainer(Container):
             codec_context.bit_rate = 128000
             codec_context.bit_rate_tolerance = 32000
             codec_context.sample_rate = rate or 48000
-            codec_context.channels = 2
-            codec_context.channel_layout = lib.AV_CH_LAYOUT_STEREO
+            # AV_CHANNEL_LAYOUT_STEREO
+            # https://ffmpeg.org/doxygen/trunk/channel__layout_8h_source.html
+            codec_context.ch_layout.order = lib.AV_CHANNEL_ORDER_NATIVE
+            codec_context.ch_layout.nb_channels = 2
+            codec_context.ch_layout.u.mask = lib.AV_CH_LAYOUT_STEREO
+            codec_context.ch_layout.opaque = NULL
 
         # Some formats want stream headers to be separate
         if self.ptr.oformat.flags & lib.AVFMT_GLOBALHEADER:

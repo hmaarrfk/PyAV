@@ -215,9 +215,8 @@ cdef extern from "libavcodec/avcodec.h" nogil:
         # Audio.
         AVSampleFormat sample_fmt
         int sample_rate
-        int channels
         int frame_size
-        int channel_layout
+        AVChannelLayout ch_layout
 
         #: .. todo:: ``get_buffer`` is deprecated for get_buffer2 in newer versions of FFmpeg.
         int get_buffer(AVCodecContext *ctx, AVFrame *frame)
@@ -352,8 +351,7 @@ cdef extern from "libavcodec/avcodec.h" nogil:
 
         int nb_samples  # Audio samples
         int sample_rate  # Audio Sample rate
-        int channels  # Number of audio channels
-        int channel_layout  # Audio channel_layout
+        AVChannelLayout ch_layout  # Audio channel_layout
 
         int64_t pts
         int64_t pkt_dts
