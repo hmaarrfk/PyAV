@@ -43,6 +43,7 @@ cdef class CodecContext:
     cdef _prepare_frames_for_encode(self, Frame frame)
     cdef _setup_encoded_packet(self, Packet)
     cdef _setup_decoded_frame(self, Frame, Packet)
+    cdef _copy_display_matrix_from_stream(self, Frame frame, Packet packet)
 
     # Implemented by base for the generic send/recv API.
     # Note that the user cannot send without receiving. This is because

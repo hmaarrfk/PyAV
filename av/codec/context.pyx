@@ -8,6 +8,7 @@ from av.codec.codec cimport Codec, wrap_codec
 from av.dictionary cimport _Dictionary
 from av.error cimport err_check
 from av.packet cimport Packet
+from av.stream cimport Stream
 from av.utils cimport avrational_to_fraction, to_avrational
 
 from enum import Flag, IntEnum
@@ -461,6 +462,45 @@ cdef class CodecContext:
             with nogil:
                 lib.avcodec_flush_buffers(self.ptr)
 
+    cdef _copy_display_matrix_from_stream(self, Frame frame, Packet packet):
+        """Copy display matrix from stream codecpar to frame if not already present."""
+        cdef lib.AVFrameSideData* existing_frame_sd
+        cdef const lib.AVPacketSideData* codecpar_sd
+        cdef lib.AVFrameSideData* new_frame_sd
+        cdef Stream stream
+
+        if packet is None:
+            return
+
+        stream = packet._stream
+        if stream is None:
+            return
+
+        existing_frame_sd = lib.av_frame_get_side_data(
+            frame.ptr,
+            lib.AV_FRAME_DATA_DISPLAYMATRIX
+        )
+        if existing_frame_sd != NULL:
+            return
+
+        codecpar_sd = lib.av_packet_side_data_get(
+            stream.ptr.codecpar.coded_side_data,
+            stream.ptr.codecpar.nb_coded_side_data,
+            lib.AV_PKT_DATA_DISPLAYMATRIX
+        )
+        if codecpar_sd == NULL or codecpar_sd.size != 36:
+            return
+
+        new_frame_sd = lib.av_frame_new_side_data(
+            frame.ptr,
+            lib.AV_FRAME_DATA_DISPLAYMATRIX,
+            codecpar_sd.size
+        )
+        if new_frame_sd == NULL:
+            return
+
+        memcpy(new_frame_sd.data, codecpar_sd.data, codecpar_sd.size)
+
     cdef _setup_decoded_frame(self, Frame frame, Packet packet):
         # Propagate our manual times.
         # While decoding, frame times are in stream time_base, which PyAV
@@ -469,6 +509,8 @@ cdef class CodecContext:
         # packet here (because flushing packets are bogus).
         if packet is not None:
             frame._time_base = packet.ptr.time_base
+            # Copy display matrix from stream codecpar to frame if not already present
+            self._copy_display_matrix_from_stream(frame, packet)
 
     @property
     def name(self):
@@ -493,7 +535,7 @@ cdef class CodecContext:
         # the codec itself. So use the descriptor here.
         desc = self.codec.desc
         cdef int i = 0
-        while desc.profiles[i].profile != lib.AV_PROFILE_UNKNOWN: 
+        while desc.profiles[i].profile != lib.AV_PROFILE_UNKNOWN:
             ret.append(desc.profiles[i].name)
             i += 1
 
@@ -508,7 +550,7 @@ cdef class CodecContext:
         # the codec itself. So use the descriptor here.
         desc = self.codec.desc
         cdef int i = 0
-        while desc.profiles[i].profile != lib.AV_PROFILE_UNKNOWN: 
+        while desc.profiles[i].profile != lib.AV_PROFILE_UNKNOWN:
             if desc.profiles[i].profile == self.ptr.profile:
                 return desc.profiles[i].name
             i += 1
