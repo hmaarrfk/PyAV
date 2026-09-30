@@ -112,3 +112,23 @@ class TestIndexEntries(TestCase):
 
         # Holding the view keeps its stream, and so the container, alive.
         assert len(entries) == length
+
+    def test_stream_freed_without_cycle_collector(self) -> None:
+        import gc
+
+        def live_streams() -> int:
+            return sum(isinstance(o, av.stream.Stream) for o in gc.get_objects())
+
+        gc.collect()
+        before = live_streams()
+        gc.disable()
+        try:
+            with av.open(fate_suite("h264/interlaced_crop.mp4")) as container:
+                assert len(container.streams.video[0].index_entries)
+            del container
+
+            # A stream owns its codec context, and with it an encoder session
+            # or a decoder's threads, so reference counting alone must free it.
+            assert live_streams() == before
+        finally:
+            gc.enable()
