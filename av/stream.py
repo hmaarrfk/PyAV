@@ -116,7 +116,6 @@ class Stream:
     ) -> cython.void:
         self.container = container
         self.ptr = stream
-        self.index_entries = wrap_index_entries(self)
 
         self.codec_context = codec_context
 
@@ -186,6 +185,21 @@ class Stream:
                 self.ptr.codecpar, self.codec_context.ptr
             )
         )
+
+    @property
+    def index_entries(self):
+        """
+        A view of FFmpeg's index for this stream.
+
+        Built on each access rather than stored, since the view holds this
+        stream and storing it here would make every stream a reference cycle,
+        keeping its codec context (and any encoder session or decoder threads
+        behind it) alive until the cycle collector runs.
+
+        :type: IndexEntries
+
+        """
+        return wrap_index_entries(self)
 
     @property
     def id(self):
